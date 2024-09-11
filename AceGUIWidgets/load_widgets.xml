@@ -1,0 +1,4 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Script file='AceGUIWidget-GuildWishlistToolsItemButton.lua'/>
+	<Script file='AceGUIWidget-GuildWishlistToolsClassButton.lua'/>
+</Ui>
