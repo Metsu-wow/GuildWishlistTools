@@ -10,7 +10,7 @@ This is an early version, some bugs or issues may occur and some feature may be 
 
 ## How to use
 
-Guild Wishlist Tools can be opend using the minimap button or with chat commands listed bellow.
+Guild Wishlist Tools can be opened using the minimap button or with chat commands listed bellow.
 
 ## Current availables features
 
