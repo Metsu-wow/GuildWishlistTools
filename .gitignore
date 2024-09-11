@@ -1,6 +1,4 @@
-/Libs
-/TODO.md
-!Libs/LibDeflate
+Libs/*
+TODO.md
 !Libs/load_libs.xml
-Textures/MinimapIcon.xcf
-Textures/Icon.xcf
+Textures/Sources/*
