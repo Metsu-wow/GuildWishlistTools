@@ -5,6 +5,8 @@
 ## Author: Metsu
 ## SavedVariables: GuildWishlistToolsDB
 ## OptionalDeps: LibStub, Ace3
+## X-Curse-Project-ID: 1100874
+## X-Wago-ID: E6gL3DK1
 
 libs\load_libs.xml
 Init.lua
