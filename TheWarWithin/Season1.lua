@@ -101,19 +101,19 @@ CURRENT_SEASON.setsByClass = {
         setID = 1688,
         setItems = {
             [0] = {
-                itemID = 212082
+                itemID = 212083
             },
             [2] = {
                 itemID = 212081
             },
             [4] = {
-                itemID = 212084
+                itemID = 212086
             },
             [6] = {
-                itemID = 212083
+                itemID = 212084
             },
             [8] = {
-                itemID = 212086
+                itemID = 212082
             }
         }
     },

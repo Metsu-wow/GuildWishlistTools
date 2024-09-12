@@ -59,7 +59,7 @@ local defaults = {
 local slotsDropdown = {}
 
 local guildName, classID, currentSpecializationID
-local raidItemsBySlot, dungeonItemsBySlot = {}
+local raidItemsBySlot, dungeonItemsBySlot, seasonItems = {}
 
 -- function that draws the widgets for the gear tab
 local function DrawGroupGear(container)
@@ -126,9 +126,12 @@ local function DrawDropdownForSlot(container, slot)
   for itemID, item in ipairs(dropdown.pullout.items) do
     item:SetOnEnter(function()
       GameTooltip:SetOwner(item.frame, "ANCHOR_BOTTOMLEFT", 0, item.frame:GetHeight())
-      local link = select(2,GetItemInfo(item.userdata.value)) or ""
-      GameTooltip:SetHyperlink(link)
-      GameTooltip:Show()
+
+      if item.userdata.value then
+        local itemInfo = seasonItems[item.userdata.value]
+        GameTooltip:SetHyperlink(itemInfo.link)
+        GameTooltip:Show()
+      end
     end)
     item:SetOnLeave(function()
       GameTooltip:Hide()
@@ -152,14 +155,17 @@ local function DrawDropdownForSlot(container, slot)
     GWT.db.char.character.battleTag = C_BattleNet.GetAccountInfoByID(select(3, BNGetInfo())).battleTag
     GWT.db.char.character.classID = classID
     GWT.db.char.character.currentSpecializationID = currentSpecializationID
-    GWT.db.char.character.wishlist[currentSpecializationID][slot] = {
-      itemID = key,
-      itemLink = nil,
-      obtentionMethod = nil,
-      isSetItem = nil,
-      instanceID = nil,
-      enconterID = nil,
-    }
+    local item = seasonItems[key]
+    if item then
+      GWT.db.char.character.wishlist[currentSpecializationID][slot] = {
+        itemID = key,
+        itemLink = item.link,
+        obtentionMethod = nil,
+        isSetItem = nil,
+        instanceID = nil,
+        enconterID = nil,
+      }
+    end
 
     --handle the main hand slot case for two hands
     if slot == 15 then
@@ -208,6 +214,31 @@ local function DrawDropdownForSlot(container, slot)
   slotsDropdown[slot] = dropdown
 
   container:AddChild(dropdown)
+
+  local clear = AceGUI:Create("Icon")
+
+  clear:SetImageSize(32, 32)
+  clear:SetImage("Interface\\Icons\\INV_MISC_QUESTIONMARK")
+
+  clear:SetCallback("OnClick", function(widget)
+    local guid = UnitGUID("player")
+    dropdown:SetValue(true)
+    if GWT.db.char.character.wishlist[currentSpecializationID] and GWT.db.char.character.wishlist[currentSpecializationID][slot] then
+      GWT.db.char.character.wishlist[currentSpecializationID][slot] = {
+        itemID = 0,
+        itemLink = nil,
+        obtentionMethod = nil,
+        isSetItem = nil,
+        instanceID = nil,
+        enconterID = nil,
+      }
+    end
+    GWT.db.char.character.lastUpdate = time()
+    GWT.db.global.characters[guid] = GWT.db.char.character
+    GWT.db.global.guilds[guildName][guid] = GWT.db.char.character
+  end)
+
+  container:AddChild(clear)
 end
 
 local function ScrollFrameTemplate(container)
@@ -270,15 +301,10 @@ local function DrawWishlistForGUID(guid, character)
       local itemLink
 
       if (character.wishlist[character.currentSpecializationID][i] and character.wishlist[character.currentSpecializationID][i].itemID) then
-        itemLink = select(2,GetItemInfo(character.wishlist[character.currentSpecializationID][i].itemID))
+        itemLink = character.wishlist[character.currentSpecializationID][i].itemLink or select(2,GetItemInfo(character.wishlist[character.currentSpecializationID][i].itemID))
       end
 
       local itemButton = AceGUI:Create("GWTItemButton")
-      local ilvl = 0
-
-      if itemLink then
-        ilvl = select(4,GetItemInfo(itemLink))
-      end
 
       if itemLink then
         itemButton:SetItem(itemLink)
@@ -445,7 +471,6 @@ end
 
 function GWT:ShowInterface()
   GWT:Init()
-  GWT:LoadData()
 
   -- Create the frame container
   local frame = AceGUI:Create("Frame")
@@ -499,9 +524,10 @@ function GWT:GetEncounterLoot(instanceId, encounterId)
   return items
 end
 
-function GWT:GetInstanceLoot(instanceId)
+function GWT:GetInstanceLoot(instanceID, difficultyID)
   EJ_SetLootFilter(classID, currentSpecializationID)
-  EJ_SelectInstance(instanceId)
+  EJ_SelectInstance(instanceID)
+  EJ_SetDifficulty(difficultyID)
   local numLoot = EJ_GetNumLoot()
   --print(numLoot)
   local items = {}
@@ -521,9 +547,9 @@ function GWT:GetInstanceLoot(instanceId)
   return items
 end
 
-function GWT:GetInstanceLootBySlot(instanceId, slot)
+function GWT:GetInstanceLootBySlot(instanceID, slot, difficultyID)
   C_EncounterJournal.SetSlotFilter(slot)
-  local items = GWT:GetInstanceLoot(instanceId)
+  local items = GWT:GetInstanceLoot(instanceID, difficultyID)
   C_EncounterJournal.SetSlotFilter(15) --15 for reset
   return items
 end
@@ -796,6 +822,8 @@ function GWT:Init()
       GWT.db.global.guilds[guildName] = {}
     end
   end
+
+  GWT:LoadData()
 end
 
 function GWT:LoadData()
@@ -820,6 +848,7 @@ function GWT:LoadData()
 
   local raidItems = {}
   local dungeonItems = {}
+  local items = {}
 
   for slot=1,#CONSTANTS.characterSlotFilterIds do
     if CURRENT_SEASON.setsByClass[classID].setItems[CONSTANTS.characterSlotFilterIds[slot]] then
@@ -829,7 +858,9 @@ function GWT:LoadData()
         local name = item:GetItemName()
         local icon = item:GetItemIcon()
         CURRENT_SEASON.setsByClass[classID].setItems[CONSTANTS.characterSlotFilterIds[slot]].name = name
+        CURRENT_SEASON.setsByClass[classID].setItems[CONSTANTS.characterSlotFilterIds[slot]].link = item:GetItemLink()
         CURRENT_SEASON.setsByClass[classID].setItems[CONSTANTS.characterSlotFilterIds[slot]].display = CreateTextureMarkup(icon, 64, 64, 20, 20, 0.1, 0.9, 0.1, 0.9, 0, 0).." "..name
+        items[item:GetItemID()] = CURRENT_SEASON.setsByClass[classID].setItems[CONSTANTS.characterSlotFilterIds[slot]]
       end)
     end
 
@@ -838,10 +869,11 @@ function GWT:LoadData()
         raidItems[slot] = {}
       end
 
-      raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]] = GWT:GetInstanceLootBySlot(CURRENT_SEASON.raidInstanceIds[i], CONSTANTS.characterSlotFilterIds[slot])
+      raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]] = GWT:GetInstanceLootBySlot(CURRENT_SEASON.raidInstanceIds[i], CONSTANTS.characterSlotFilterIds[slot], 16)
 
       for j = 1, #raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]] do
         raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]][j].display = CreateTextureMarkup(raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]][j].icon, 64, 64, 20, 20, 0.1, 0.9, 0.1, 0.9, 0, 0).." "..raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]][j].name
+        items[raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]][j].itemID] = raidItems[slot][CURRENT_SEASON.raidInstanceIds[i]][j]
       end
     end
 
@@ -850,14 +882,16 @@ function GWT:LoadData()
         dungeonItems[slot] = {}
       end
 
-      dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]] = GWT:GetInstanceLootBySlot(CURRENT_SEASON.dungeonInstanceIds[i], CONSTANTS.characterSlotFilterIds[slot])
+      dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]] = GWT:GetInstanceLootBySlot(CURRENT_SEASON.dungeonInstanceIds[i], CONSTANTS.characterSlotFilterIds[slot], 8)
 
       for j = 1, #dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]] do
         dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]][j].display = CreateTextureMarkup(dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]][j].icon, 64, 64, 20, 20, 0.1, 0.9, 0.1, 0.9, 0, 0).." "..dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]][j].name
+        items[dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]][j].itemID] = dungeonItems[slot][CURRENT_SEASON.dungeonInstanceIds[i]][j]
       end
     end
   end
 
   raidItemsBySlot = raidItems
   dungeonItemsBySlot = dungeonItems
+  seasonItems = items
 end
