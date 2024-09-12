@@ -1,4 +1,4 @@
-## Interface: 110002, 110000
+## Interface: 110002
 ## Version: 0.1.0
 ## Title: GuildWishlistTools
 ## Notes: Guild Wishlist Tools
