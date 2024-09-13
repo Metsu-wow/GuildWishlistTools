@@ -1,5 +1,5 @@
 ## Interface: 110002
-## Version: 0.1.0
+## Version: 0.1.1
 ## Title: GuildWishlistTools
 ## Notes: Guild Wishlist Tools
 ## Author: Metsu
