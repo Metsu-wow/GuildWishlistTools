@@ -215,10 +215,10 @@ local function DrawDropdownForSlot(container, slot)
 
   container:AddChild(dropdown)
 
-  local clear = AceGUI:Create("Icon")
+  local clear = AceGUI:Create("Button")
 
-  clear:SetImageSize(32, 32)
-  clear:SetImage("Interface\\Icons\\INV_MISC_QUESTIONMARK")
+  clear:SetText(L["Empty"])
+  clear:SetWidth(100)
 
   clear:SetCallback("OnClick", function(widget)
     local guid = UnitGUID("player")
@@ -829,21 +829,26 @@ end
 function GWT:LoadData()
   classID = select(3, UnitClass("player"))
   local currentSpec = GetSpecialization()
-  currentSpecializationID = GetSpecializationInfo(currentSpec)
 
-  if not GWT.db.char.character.gear[currentSpecializationID] then
-    GWT.db.char.character.gear[currentSpecializationID] = {}
-  end
+  if currentSpec ~= nil then
+    currentSpecializationID = GetSpecializationInfo(currentSpec)
 
-  if not GWT.db.char.character.wishlist[currentSpecializationID] then
-    GWT.db.char.character.wishlist[currentSpecializationID] = {}
-  end
+    if currentSpecializationID ~= nil then
+      if not GWT.db.char.character.gear[currentSpecializationID] then
+        GWT.db.char.character.gear[currentSpecializationID] = {}
+      end
 
-  if currentSpecializationID == 577 or currentSpecializationID == 581 or currentSpecializationID == 251 or currentSpecializationID == 259 
-  or currentSpecializationID == 260 or currentSpecializationID == 261 or currentSpecializationID == 72 then
-    CONSTANTS.characterSlotFilterIds[16] = 10
-  else
-    CONSTANTS.characterSlotFilterIds[16] = 11
+      if not GWT.db.char.character.wishlist[currentSpecializationID] then
+        GWT.db.char.character.wishlist[currentSpecializationID] = {}
+      end
+
+      if currentSpecializationID == 577 or currentSpecializationID == 581 or currentSpecializationID == 251 or currentSpecializationID == 259 
+      or currentSpecializationID == 260 or currentSpecializationID == 261 or currentSpecializationID == 72 then
+        CONSTANTS.characterSlotFilterIds[16] = 10
+      else
+        CONSTANTS.characterSlotFilterIds[16] = 11
+      end
+    end
   end
 
   local raidItems = {}

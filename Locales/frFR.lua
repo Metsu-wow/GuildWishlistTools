@@ -31,6 +31,7 @@ L["LootHistory"] = "Historique des Loots"
 L["ImportExport"] = "Import / Export"
 
 -- Content
+L["Empty"] = "Vider"
 L["Import"] = "Importer"
 L["ImportWishlist"] = "Importer une liste"
 L["Export"] = "Exporter"
